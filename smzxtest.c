@@ -21,8 +21,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <dos.h>
+#include <ctype.h>
 #include <stdio.h>
+#include <string.h>
+
+#include <conio.h>
+#include <dos.h>
+
+#ifdef __WATCOMC__
+#define outportb outp
+#define inportb inp
+#endif
+
+#ifdef __GNUC__
+#define outportb outp
+#define inportb inp
+#define far __far
+#endif
 
 static unsigned char far *ptr(unsigned long offset)
 {
@@ -31,26 +46,29 @@ static unsigned char far *ptr(unsigned long offset)
 
 static void vga_set_16p(void)
 {
-	asm mov ax,1202h;
-	asm mov bl,30h;
-	asm int 10h;
-	asm mov ax,0003h;
-	asm int 10h;
+	union REGS in_reg, out_reg;
+	in_reg.x.ax = 0x1202;
+	in_reg.h.bl = 0x30;
+	int86(0x10, &in_reg, &out_reg);
+	in_reg.x.ax = 0x0003;
+	int86(0x10, &in_reg, &out_reg);
 }
 
 static void ega_set_14p_mode_3(void)
 {
-	asm mov ax,1201h;
-	asm mov bl,30h;
-	asm int 10h;
-	asm mov ax,0003h;
-	asm int 10h;
+	union REGS in_reg, out_reg;
+	in_reg.x.ax = 0x1201;
+	in_reg.h.bl = 0x30;
+	int86(0x10, &in_reg, &out_reg);
+	in_reg.x.ax = 0x0003;
+	int86(0x10, &in_reg, &out_reg);
 }
 
 static void ega_set_page(void)
 {
-	asm mov ax,0500h;
-	asm int 10h;
+	union REGS in_reg, out_reg;
+	in_reg.x.ax = 0x0500;
+	int86(0x10, &in_reg, &out_reg);
 }
 
 static void ega_set_smzx(int is_ati)
@@ -59,8 +77,8 @@ static void ega_set_smzx(int is_ati)
 	outportb(0x3C0, 0x4C);
 	if(is_ati)
 	{
-		outport(0x3C0, 0x13);
-		outport(0x3C0, 0x01);
+		outportb(0x3C0, 0x13);
+		outportb(0x3C0, 0x01);
 	}
 }
 
@@ -77,30 +95,34 @@ static int ega_detect_ati(void)
 
 static void ega_blink_on(void)
 {
-	asm mov ax, 1003h;
-	asm mov bl, 01h;
-	asm int 10h;
+	union REGS in_reg, out_reg;
+	in_reg.x.ax = 0x1003;
+	in_reg.h.bl = 0x01;
+	int86(0x10, &in_reg, &out_reg);
 }
 
 static void ega_blink_off(void)
 {
-	asm mov ax, 1003h;
-	asm mov bl, 00h;
-	asm int 10h;
+	union REGS in_reg, out_reg;
+	in_reg.x.ax = 0x1003;
+	in_reg.h.bl = 0x00;
+	int86(0x10, &in_reg, &out_reg);
 }
 
 static void ega_cursor_off(void)
 {
-	asm mov ax, 0103h;
-	asm mov cx, 3f00h;
-	asm int 10h;
+	union REGS in_reg, out_reg;
+	in_reg.x.ax = 0x0103;
+	in_reg.x.cx = 0x3f00;
+	int86(0x10, &in_reg, &out_reg);
 }
 
 static void ega_cursor_on(void)
 {
-	asm mov ax, 0103h;
-	asm mov cx, 0b0ch;
-	asm int 10h;
+	union REGS in_reg, out_reg;
+	in_reg.x.ax = 0x0103;
+	in_reg.x.cx = 0x0b0c;
+	int86(0x10, &in_reg, &out_reg);
 }
 
 static void ega_bank_char(void)
@@ -194,10 +216,10 @@ static void drawbox(int x, int y, int w, int h, int co)
 	}
 }
 
-int main(void)
+static void show_test(int is_ati)
 {
 	char buf[32];
-	int is_ati = ega_detect_ati();
+	int detected_ati = ega_detect_ati();
 	int i;
 	int j;
 	int pal;
@@ -247,6 +269,11 @@ int main(void)
 
 	sprintf(buf, "Mode: %s", is_ati ? "ATI" : "C&T / NVIDIA");
 	drawstr(4, 1, buf, 0x0f);
+	drawstr(4, 2, "(A to switch)", 0x0f);
+
+	drawstr(4, 4, "Detected:", 0x0f);
+	sprintf(buf, "%s", detected_ati ? "ATI" : "C&T / NVIDIA");
+	drawstr(10, 5, buf, 0x0f);
 
 	drawstr(63, 4, "Char diagram:", 0x0f);
 	drawbox(64, 5, 10, 9, 0x0f);
@@ -268,9 +295,27 @@ int main(void)
 		}
 	}
 	ega_set_page();
+}
 
-	/* Wait for user input */
-	fgetc(stdin);
+int main(void)
+{
+	char c;
+	int is_ati = ega_detect_ati();
+	int i;
+
+	while (1)
+	{
+		show_test(is_ati);
+
+		c = tolower(getch());
+		if (c == 'a')
+		{
+			is_ati = !is_ati;
+			continue;
+		}
+
+		break;
+	}
 
 	/* Cleanup */
 	vga_set_16p();
@@ -293,4 +338,4 @@ int main(void)
 		outportb(0x3C9, b);
 	}
 	return 0;
-}
+}
