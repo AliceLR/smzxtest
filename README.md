@@ -1,6 +1,8 @@
 # smzxtest
 Tests if a VGA-compatible chipset supports MegaZeux's 256 color text mode ("Super MegaZeux").
 
+![A screen capture of smzxtest displaying a 256-color text mode in DOSBox-X 2024.03.01.](assets/smzxtest.png)
+
 ## Usage
 
 This program requires no 32-bit extenders or other external files; just copy it
