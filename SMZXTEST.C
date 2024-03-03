@@ -71,15 +71,12 @@ static void ega_set_page(void)
 	int86(0x10, &in_reg, &out_reg);
 }
 
-static void ega_set_smzx(int is_ati)
+static void ega_set_smzx(int horiz_shift)
 {
 	outportb(0x3C0, 0x10);
 	outportb(0x3C0, 0x4C);
-	if(is_ati)
-	{
-		outportb(0x3C0, 0x13);
-		outportb(0x3C0, 0x01);
-	}
+	outportb(0x3C0, 0x13);
+	outportb(0x3C0, horiz_shift);
 }
 
 static int ega_detect_ati(void)
@@ -216,7 +213,7 @@ static void drawbox(int x, int y, int w, int h, int co)
 	}
 }
 
-static void show_test(int is_ati)
+static void show_test(int bit_endian, int horiz_shift)
 {
 	char buf[32];
 	int detected_ati = ega_detect_ati();
@@ -225,7 +222,7 @@ static void show_test(int is_ati)
 	int pal;
 
 	ega_set_14p_mode_3();
-	ega_set_smzx(is_ati);
+	ega_set_smzx(horiz_shift);
 	ega_cursor_off();
 	ega_blink_off();
 
@@ -244,7 +241,7 @@ static void show_test(int is_ati)
 	{
 		int a = ((i >> 4) << 2) + 0;
 		int b = ((i & 15) << 2) + 0;
-		int idx = is_ati ? (i >> 4) | ((i & 15) << 4) : i;
+		int idx = bit_endian ? (i >> 4) | ((i & 15) << 4) : i;
 		outportb(0x3C8, idx);
 		outportb(0x3C9, a);
 		outportb(0x3C9, b);
@@ -260,26 +257,34 @@ static void show_test(int is_ati)
 	ega_bank_text();
 	drawclear(0x00);
 
-	drawstr(4, 18, "256 colors, cyan right, red bottom: works.", 0x0f);
-	drawstr(4, 19, "256 colors, red right, cyan bottom: works (reversed nibbles).", 0x0f);
+	drawstr(4, 18, "256 colors, cyan top-right, red bottom-left: works.", 0x0f);
+	drawstr(4, 19, "256 colors, red top-right, cyan bottom-left: works (wrong mode or shift).", 0x0f);
 	drawstr(4, 20, "16 colors: doesn't work (cyan: C&T / NVIDIA) (red: ATI).", 0x0f);
 	drawstr(4, 21, "Interlaced bars: doesn't work, no doubling.", 0x0f);
 	drawstr(4, 22, "Horizontal bars: doesn't work, doubled left pixel.", 0x0f);
 	drawstr(4, 23, "Vertical bars: doesn't work, doubled right pixel.", 0x0f);
 
-	sprintf(buf, "Mode: %s", is_ati ? "ATI" : "C&T / NVIDIA");
+	sprintf(buf, "Mode: %s", bit_endian ? "ATI" : "C&T / NVIDIA");
 	drawstr(4, 1, buf, 0x0f);
 	drawstr(4, 2, "(A to switch)", 0x0f);
 
-	drawstr(4, 4, "Detected:", 0x0f);
-	sprintf(buf, "%s", detected_ati ? "ATI" : "C&T / NVIDIA");
-	drawstr(10, 5, buf, 0x0f);
+	sprintf(buf, "Pixel shift: %d", horiz_shift);
+	drawstr(4, 4, buf, 0x0f);
+	drawstr(4, 5, "(+/- to switch)", 0x0f);
 
-	drawstr(63, 4, "Char diagram:", 0x0f);
-	drawbox(64, 5, 10, 9, 0x0f);
+	drawstr(4, 7, "Detected:", 0x0f);
+	sprintf(buf, "%s", detected_ati ? "ATI" : "C&T / NVIDIA");
+	drawstr(10, 8, buf, 0x0f);
+
+	drawstr(63, 2, "Char diagram:", 0x0f);
+	drawstr(63, 12, "The four bars", 0x0f);
+	drawstr(63, 13, "should be solid", 0x0f);
+	drawstr(63, 14, "white (pixel", 0x0f);
+	drawstr(63, 15, "shift).", 0x0f);
+	drawbox(64, 3, 10, 9, 0x06);
 	for(i = 0; i < 7; i++)
 		for(j = 0; j < 8; j += 2)
-			drawchar(j + 66, i + 6, 0xdb, 0xff);
+			drawchar(j + 66, i + 4, 0xdb, 0xff);
 
 	drawstr(57, 1, "0Fh", 0x0f);
 	drawstr(20, 16, "F0h", 0x0f);
@@ -301,19 +306,29 @@ int main(void)
 {
 	char c;
 	int is_ati = ega_detect_ati();
+	int horiz_shift = 0;
 	int i;
 
-	while (1)
+	while(1)
 	{
-		show_test(is_ati);
+		show_test(is_ati, horiz_shift);
 
 		c = tolower(getch());
-		if (c == 'a')
+		if(c == 'a')
 		{
 			is_ati = !is_ati;
 			continue;
 		}
-
+		if(c == '-')
+		{
+			horiz_shift = (horiz_shift - 1) & 15;
+			continue;
+		}
+		if(c == '=')
+		{
+			horiz_shift = (horiz_shift + 1) & 15;
+			continue;
+		}
 		break;
 	}
 
