@@ -1,4 +1,5 @@
 # smzxtest
+
 Tests if a VGA-compatible chipset supports MegaZeux's 256 color text mode ("Super MegaZeux").
 
 ![A screen capture of smzxtest displaying a 256-color text mode in DOSBox-X 2024.03.01.](assets/smzxtest.png)
@@ -18,10 +19,24 @@ it is embedded in.
 
 ## Compiling
 
+### Turbo C
+
 Requires Borland Turbo C 2.01 and Borland Turbo Assembler.
 
 ```bat
 tcc -B smzxtest
+```
+
+### Watcom C
+
+```bat
+wcl -bt=dos smzxtest.c
+```
+
+### gcc-ia16
+
+```sh
+ia16-elf-gcc -o smzxtest.exe smzxtest.c -li86
 ```
 
 ## License
