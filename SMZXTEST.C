@@ -306,7 +306,7 @@ int main(void)
 {
 	char c;
 	int is_ati = ega_detect_ati();
-	int horiz_shift = 0;
+	int horiz_shift = is_ati;
 	int i;
 
 	while(1)
