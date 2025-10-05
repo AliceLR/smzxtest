@@ -1,6 +1,6 @@
 /* Super MegaZeux text mode tester (Turbo C 2.01)
  *
- * Copyright (C) 2024 Alice Rowan <petrifiedrowan@gmail.com>
+ * Copyright (C) 2024-2025 Alice Rowan <petrifiedrowan@gmail.com>
  *
  * Extensively uses code from MegaZeux's EGA renderer:
  * Copyright (C) 2010 Alan Williams <mralert@gmail.com>
@@ -257,46 +257,47 @@ static void show_test(int bit_endian, int horiz_shift)
 	ega_bank_text();
 	drawclear(0x00);
 
-	drawstr(4, 18, "256 colors, cyan top-right, red bottom-left: works.", 0x0f);
-	drawstr(4, 19, "256 colors, red top-right, cyan bottom-left: works (wrong mode or shift).", 0x0f);
-	drawstr(4, 20, "16 colors: doesn't work (cyan: C&T / NVIDIA) (red: ATI).", 0x0f);
-	drawstr(4, 21, "Interlaced bars: doesn't work, no doubling.", 0x0f);
-	drawstr(4, 22, "Horizontal bars: doesn't work, doubled left pixel.", 0x0f);
-	drawstr(4, 23, "Vertical bars: doesn't work, doubled right pixel.", 0x0f);
+	drawstr(2, 0, "smzxtest Copyright (C) 2024-2025 Lachesis. (GPLv2-or-later)", 0x0f);
+	drawstr(2, 19, "256 colors, cyan top-right, red bottom-left: works.", 0x0f);
+	drawstr(2, 20, "256 colors, red top-right, cyan bottom-left: works (wrong mode or shift).", 0x0f);
+	drawstr(2, 21, "256 colors, alternating bars: laptop not using 8 pixel text mode (try Fn+F8).", 0x0f);
+	drawstr(2, 22, "16 colors, interlaced bars: doesn't work, no doubling.", 0x0f);
+	drawstr(2, 23, "16 colors, horizontal bars: doesn't work, doubled left pixel.", 0x0f);
+	drawstr(2, 24, "16 colors, vertical bars: doesn't work, doubled right pixel.", 0x0f);
 
 	sprintf(buf, "Mode: %s", bit_endian ? "ATI" : "C&T / NVIDIA");
-	drawstr(4, 1, buf, 0x0f);
-	drawstr(4, 2, "(A to switch)", 0x0f);
+	drawstr(4, 2, buf, 0x0f);
+	drawstr(4, 3, "(A to switch)", 0x0f);
 
 	sprintf(buf, "Pixel shift: %d", horiz_shift);
-	drawstr(4, 4, buf, 0x0f);
-	drawstr(4, 5, "(+/- to switch)", 0x0f);
+	drawstr(4, 5, buf, 0x0f);
+	drawstr(4, 6, "(+/- to switch)", 0x0f);
 
-	drawstr(4, 7, "Detected:", 0x0f);
+	drawstr(4, 8, "Detected:", 0x0f);
 	sprintf(buf, "%s", detected_ati ? "ATI" : "C&T / NVIDIA");
-	drawstr(10, 8, buf, 0x0f);
+	drawstr(10, 9, buf, 0x0f);
 
-	drawstr(63, 2, "Char diagram:", 0x0f);
-	drawstr(63, 12, "The four bars", 0x0f);
-	drawstr(63, 13, "should be solid", 0x0f);
-	drawstr(63, 14, "white (pixel", 0x0f);
-	drawstr(63, 15, "shift).", 0x0f);
-	drawbox(64, 3, 10, 9, 0x06);
+	drawstr(63, 3, "Char diagram:", 0x0f);
+	drawstr(63, 13, "The four bars", 0x0f);
+	drawstr(63, 14, "should be solid", 0x0f);
+	drawstr(63, 15, "white (pixel", 0x0f);
+	drawstr(63, 16, "shift).", 0x0f);
+	drawbox(64, 4, 10, 9, 0x06);
 	for(i = 0; i < 7; i++)
 		for(j = 0; j < 8; j += 2)
-			drawchar(j + 66, i + 4, 0xdb, 0xff);
+			drawchar(j + 66, i + 5, 0xdb, 0xff);
 
-	drawstr(57, 1, "0Fh", 0x0f);
-	drawstr(20, 16, "F0h", 0x0f);
-	drawstr(57, 16, "FFh", 0x0f);
+	drawstr(57, 2, "0Fh", 0x0f);
+	drawstr(20, 17, "F0h", 0x0f);
+	drawstr(57, 17, "FFh", 0x0f);
 
 	pal = 0;
 	for(i = 0; i < 16; i++)
 	{
 		for(j = 0; j < 32; j += 2, pal++)
 		{
-			drawchar(j + 24, i + 1, 0x7f, pal);
-			drawchar(j + 25, i + 1, 0x7f, pal);
+			drawchar(j + 24, i + 2, 0x7f, pal);
+			drawchar(j + 25, i + 2, 0x7f, pal);
 		}
 	}
 	ega_set_page();
