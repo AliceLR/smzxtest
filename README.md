@@ -19,7 +19,7 @@ it is embedded in.
 
 ## Explanation
 
-The VGA Mode Control register bit 4, when enabled, causes the VGA to switch
+The VGA Mode Control register bit 6, when enabled, causes the VGA to switch
 from interpreting color data bytes in video memory as two 4-bit color indices
 to interpreting these bytes as a single 8-bit color index (used to draw a
 single "wide" pixel). This bit was only ever supposed to be enabled for mode 13h.
