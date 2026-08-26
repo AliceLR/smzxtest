@@ -81,10 +81,13 @@ by 1 pixel. Because ATI adapters *also* handle 16 color indices in a "little"
 endian manner, this causes the image to appear similar to C&T/NVIDIA/etc.,
 but with pixels from adjacent characters "bleeding" into each other. To fix
 this, the horizontal pixel shift needs to be set to 1 (and compensation for
-"little" nibble endian also needs to be enabled). smzxtest automatically
-sets horizontal pixel shift to 1 for detected ATI adapters.
+"little" nibble endian also needs to be enabled).
 
-### Text modes with characters wider 8 pixels
+smzxtest automatically sets horizontal pixel shift to 1 for detected ATI
+adapters. It can be adjusted by pressing '+' and '-' to increase or decrease
+`x`, though only 0 or 1 should be necessary.
+
+### Text modes with characters wider than 8 pixels
 
 On laptops, some adapters will automatically upscale 8x14 character text mode
 graphics to 9x16 or larger. When SMZX is enabled, this can cause the nibble endian
@@ -110,11 +113,10 @@ Laptops typically allow this upscaling to be disabled with a Fn+F# key combinati
   support SMZX. There may be a few that do not.
 
 * Trident: some Trident TVGA chipsets support SMZX. TGUI chipsets also
-  need testing. Later Trident chipsets do NOT support SMZX, though.
+  need testing. Later Trident chipsets do NOT support SMZX.
 
 * VIA S3: later S3 graphics adapters embedded into VIA chipsets appear to
-  support SMZX, despite earlier S3 chipsets not supporting it. This needs
-  more investigation.
+  support SMZX, despite earlier S3 chipsets not supporting it.
 
 * Oak Technologies OTI-037C and possibly other similar cards support SMZX.
   These combine the nibbles in a little endian manner.
