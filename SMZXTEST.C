@@ -1,6 +1,6 @@
-/* Super MegaZeux text mode tester (Turbo C 2.01)
+/* Super MegaZeux text mode tester
  *
- * Copyright (C) 2024-2025 Alice Rowan <petrifiedrowan@gmail.com>
+ * Copyright (C) 2024-2026 Alice Rowan <petrifiedrowan@gmail.com>
  *
  * Extensively uses code from MegaZeux's EGA renderer:
  * Copyright (C) 2010 Alan Williams <mralert@gmail.com>
@@ -38,6 +38,26 @@
 #define inportb inp
 #define far __far
 #endif
+
+enum bit_endian
+{
+  BIT_ENDIAN_BIG,   // C&T, NVIDIA, Trident, VIA S3
+  BIT_ENDIAN_LITTLE // ATI, Oak Technologies
+};
+
+enum vendor
+{
+  VENDOR_GENERIC,
+  VENDOR_ATI,
+  VENDOR_OAK
+};
+
+static const char *vendor_string[] =
+{
+  "C&T, NVIDIA,\nTrident, VIA S3,\nor other",
+  "ATI",
+  "Oak Technologies"
+};
 
 static unsigned char far *ptr(unsigned long offset)
 {
@@ -82,9 +102,20 @@ static void ega_set_smzx(int horiz_shift)
 static int ega_detect_ati(void)
 {
 	static const unsigned char magic[] = "761295520";
-	unsigned char far *offset = ptr(0xc0031ul);
+	const unsigned char far *offset = ptr(0xc0031ul);
 	int i;
 	for(i = 0; i < 9; i++)
+		if(offset[i] != magic[i])
+			return 0;
+	return 1;
+}
+
+static int ega_detect_oak(void)
+{
+	static const unsigned char magic[] = "OAK VGA";
+	const unsigned char far *offset = ptr(0xc0008ul);
+	int i;
+	for(i = 0; i < 7; i++)
 		if(offset[i] != magic[i])
 			return 0;
 	return 1;
@@ -189,12 +220,19 @@ static void drawchar(int x, int y, unsigned char ch, unsigned char co)
 	offset[1] = co;
 }
 
-static void drawstr(int x, int y, const char *ch, unsigned char co)
+static void drawstr(int x, int y, const char *str, unsigned char co)
 {
 	unsigned char far *offset = drawoffset(x, y);
-	while(*ch)
+	unsigned char ch;
+	while((ch = *(str++)))
 	{
-		*(offset++) = *(ch++);
+		if(ch == '\n')
+		{
+			y++;
+			offset = drawoffset(x, y);
+			continue;
+		}
+		*(offset++) = ch;
 		*(offset++) = co;
 	}
 }
@@ -213,10 +251,20 @@ static void drawbox(int x, int y, int w, int h, int co)
 	}
 }
 
-static void show_test(int bit_endian, int horiz_shift)
+static enum vendor get_vendor(void)
+{
+	if(ega_detect_ati())
+		return VENDOR_ATI;
+	if(ega_detect_oak())
+		return VENDOR_OAK;
+
+	return VENDOR_GENERIC;
+}
+
+static void show_test(enum vendor detected,
+ enum bit_endian bit_endian, int horiz_shift)
 {
 	char buf[32];
-	int detected_ati = ega_detect_ati();
 	int i;
 	int j;
 	int pal;
@@ -257,25 +305,25 @@ static void show_test(int bit_endian, int horiz_shift)
 	ega_bank_text();
 	drawclear(0x00);
 
-	drawstr(2, 0, "smzxtest Copyright (C) 2024-2025 Lachesis. (GPLv2-or-later)", 0x0f);
+	drawstr(2, 0, "smzxtest Copyright (C) 2024-2026 Lachesis. (GPLv2-or-later)", 0x0f);
 	drawstr(2, 19, "256 colors, cyan top-right, red bottom-left: works.", 0x0f);
-	drawstr(2, 20, "256 colors, red top-right, cyan bottom-left: works (wrong mode or shift).", 0x0f);
-	drawstr(2, 21, "256 colors, alternating bars: laptop not using 8 pixel text mode (try Fn+F8).", 0x0f);
-	drawstr(2, 22, "16 colors, interlaced bars: doesn't work, no doubling.", 0x0f);
+	drawstr(2, 20, "256 colors, red top-right, cyan bottom-left: works (wrong endian or shift).", 0x0f);
+	drawstr(2, 21, "256 colors, alternating bars: not 8 pixel text mode (laptops: try Fn+F8).", 0x0f);
+	drawstr(2, 22, "16 colors, interleaved bars: doesn't work, no doubling.", 0x0f);
 	drawstr(2, 23, "16 colors, horizontal bars: doesn't work, doubled left pixel.", 0x0f);
 	drawstr(2, 24, "16 colors, vertical bars: doesn't work, doubled right pixel.", 0x0f);
 
-	sprintf(buf, "Mode: %s", bit_endian ? "ATI" : "C&T / NVIDIA");
+	sprintf(buf, "Nib.end.: %s", bit_endian ? "Little" : "Big");
 	drawstr(4, 2, buf, 0x0f);
 	drawstr(4, 3, "(A to switch)", 0x0f);
 
 	sprintf(buf, "Pixel shift: %d", horiz_shift);
 	drawstr(4, 5, buf, 0x0f);
-	drawstr(4, 6, "(+/- to switch)", 0x0f);
+	drawstr(4, 6, "(+/- to adjust)", 0x0f);
 
 	drawstr(4, 8, "Detected:", 0x0f);
-	sprintf(buf, "%s", detected_ati ? "ATI" : "C&T / NVIDIA");
-	drawstr(10, 9, buf, 0x0f);
+	sprintf(buf, "%s", vendor_string[detected]);
+	drawstr(6, 9, buf, 0x0f);
 
 	drawstr(63, 3, "Char diagram:", 0x0f);
 	drawstr(63, 13, "The four bars", 0x0f);
@@ -305,19 +353,35 @@ static void show_test(int bit_endian, int horiz_shift)
 
 int main(void)
 {
+	enum vendor detected;
 	char c;
-	int is_ati = ega_detect_ati();
-	int horiz_shift = is_ati;
+	int bit_endian = BIT_ENDIAN_BIG;
+	int horiz_shift = 0;
 	int i;
+
+	detected = get_vendor();
+	switch(detected)
+	{
+	case VENDOR_GENERIC:
+		bit_endian = BIT_ENDIAN_BIG;
+		break;
+	case VENDOR_ATI:
+		bit_endian = BIT_ENDIAN_LITTLE;
+		horiz_shift = 1;
+		break;
+	case VENDOR_OAK:
+		bit_endian = BIT_ENDIAN_LITTLE;
+		break;
+	}
 
 	while(1)
 	{
-		show_test(is_ati, horiz_shift);
+		show_test(detected, bit_endian, horiz_shift);
 
 		c = tolower(getch());
 		if(c == 'a')
 		{
-			is_ati = !is_ati;
+			bit_endian = !bit_endian;
 			continue;
 		}
 		if(c == '-')
