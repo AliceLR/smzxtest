@@ -42,7 +42,7 @@
 enum bit_endian
 {
   BIT_ENDIAN_BIG,   // C&T, NVIDIA, Trident, VIA S3
-  BIT_ENDIAN_LITTLE // ATI, Oak Technologies
+  BIT_ENDIAN_LITTLE // ATI, Oak Technology
 };
 
 enum vendor
@@ -56,7 +56,7 @@ static const char *vendor_string[] =
 {
   "C&T, NVIDIA,\nTrident, VIA S3,\nor other",
   "ATI",
-  "Oak Technologies"
+  "Oak Technology"
 };
 
 static unsigned char far *ptr(unsigned long offset)

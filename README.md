@@ -118,7 +118,7 @@ Laptops typically allow this upscaling to be disabled with a Fn+F# key combinati
 * VIA S3: later S3 graphics adapters embedded into VIA chipsets appear to
   support SMZX, despite earlier S3 chipsets not supporting it.
 
-* Oak Technologies OTI-037C and possibly other similar cards support SMZX.
+* Oak Technology OTI-037C and possibly other similar cards support SMZX.
   These combine the nibbles in a little endian manner.
 
 ### Emulation
@@ -128,7 +128,7 @@ Laptops typically allow this upscaling to be disabled with a Fn+F# key combinati
 
 * 86Box supports SMZX unintentionally, though it will inappropriately
   display it correctly for adapters that are not supposed to and does
-  not accurately emulate the ATI and Oak Technologies quirks.
+  not accurately emulate the ATI and Oak Technology quirks.
   Trident TVGA 9000B and Chips & Technologies B69000 are the safest adapters
   to select if you are intentionally trying to emulate SMZX, though the
   former does not support VBE 2.0 without a driver and the latter has
